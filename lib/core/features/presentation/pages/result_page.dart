@@ -1,15 +1,17 @@
-// lib/core/features/presentation/pages/result_page.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../providers/score_provider.dart';
 
+import '../providers/score_provider.dart';
+import '../providers/history_provider.dart';
+
+// 🔹 Result Page
 class ResultPage extends ConsumerWidget {
   const ResultPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final riskLevel = ref.watch(resultProvider); // hasil berupa String
-    final score = ref.watch(scoreProvider); // skor numerik
+    final riskLevel = ref.watch(resultProvider);
+    final score = ref.watch(scoreProvider);
 
     String recommendation;
     String extraAdvice = '';
@@ -34,10 +36,19 @@ class ResultPage extends ConsumerWidget {
             'Teruskan rutinitas sehat dan tetap terhubung dengan orang lain.';
     }
 
-    // 🔹 Pop-up rekomendasi otomatis (AMAAAN)
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    // 🔹 Simpan otomatis ke history
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (!context.mounted) return;
 
+      await ref
+          .read(historyProvider.notifier)
+          .saveHistory(
+            score: score,
+            risk: riskLevel,
+            recommendation: recommendation,
+          );
+
+      // 🔹 Pop-up rekomendasi
       showDialog(
         context: context,
         builder: (_) => AlertDialog(
@@ -69,16 +80,13 @@ class ResultPage extends ConsumerWidget {
               style: Theme.of(context).textTheme.headlineSmall,
             ),
             const SizedBox(height: 8),
-
             Text(
               'Tingkat Risiko: $riskLevel',
               style: Theme.of(
                 context,
               ).textTheme.titleLarge!.copyWith(color: Colors.indigo),
             ),
-
             const SizedBox(height: 24),
-
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -91,9 +99,7 @@ class ResultPage extends ConsumerWidget {
                 style: Theme.of(context).textTheme.bodyLarge,
               ),
             ),
-
             const Spacer(),
-
             const Text(
               'Disclaimer: InsightMind bersifat edukatif, bukan alat diagnosis medis.',
               textAlign: TextAlign.center,
